@@ -2,7 +2,7 @@
 
 Single source of truth for agent guardrails + reusable prompts/skills + lightweight CLI tools, shared across coding harnesses (Codex CLI, Pi coding agent, Claude Code, etc.).
 
-Heavily inspired by Peter Steinberger’s agent-scripts workflow (@steipete).
+Heavily inspired by Peter Steinberger’s agent-scripts workflow (@steipete): https://github.com/steipete/agent-scripts
 
 ## Setup
 
@@ -126,4 +126,4 @@ Agent skills live in `./skills/**/SKILL.md`.
 
 ## Credits
 
-- Inspired by @steipete’s agent-scripts repo and guardrails-first workflow.
+- Inspired by @steipete’s agent-scripts repo and guardrails-first workflow: https://github.com/steipete/agent-scripts
