@@ -1,0 +1,15 @@
+{
+  "name": "agent-scripts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "mkdir -p bin && for f in *.ts; do bun build \"$f\" --compile --outfile \"bin/${f%.ts}\"; done && cp scripts/committer bin/committer",
+    "build:tool": "mkdir -p bin && bun build \"$TOOL.ts\" --compile --outfile \"bin/$TOOL\"",
+    "install-bin": "cp bin/* ~/.local/bin/"
+  },
+  "dependencies": {
+    "commander": "^13.1.0",
+    "puppeteer-core": "^24.34.0"
+  }
+}
