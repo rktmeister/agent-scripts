@@ -90,6 +90,13 @@ On exit → immediately enter Code mode. No further planning unless blocked by n
 - How to verify
 - Known limitations or follow-up todos
 
+## Docs
+
+- If a repo has `docs/`, you MUST run a docs inventory early: `docs-list` (if available) or the repo’s docs command (often `pnpm run docs:list`). Ignore if not installed.
+- Read `README*` and relevant docs before scanning code; follow `read_when` hints and doc links until the domain makes sense.
+- When behavior/API changes, update docs in the same patch; don’t ship behavior changes without docs when docs exist.
+- When editing docs under `docs/`, include YAML front matter with `summary` + `read_when` and keep `docs-list` output clean.
+
 ---
 
 # Language & Style
@@ -135,10 +142,23 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 
 - Use Conventional Commits: `feat` / `fix` / `refactor` / `build` / `ci` / `chore` / `docs` / `style` / `perf` / `test` / `revert`
 - Custom scopes allowed (e.g., `macos`, `docker`)
+- Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
+- Avoid manual `git add -A`, `git add .`, `git commit`, or interactive staging unless explicitly requested (or required by the repo’s workflow)
+- Multi-agent safety (same worktree): treat the Git index (staging area) as shared state; prefer `committer` (uses an isolated index per invocation) and avoid relying on staged changes persisting
 - **Never proactively suggest** history-rewriting commands (`rebase`, `reset --hard`, `push --force`) unless explicitly requested
 - Use `gh` CLI for GitHub interactions
 - PRs/CI: prefer `gh pr view`, `gh pr diff`, `gh run list`, `gh run view` over web browsing
 - Need to import an upstream file: stage it in `/tmp/` first, then copy/cherry-pick changes; never blindly overwrite tracked files
+
+## Multi-Agent
+
+When multiple agents share one worktree (Codex + Claude + Gemini, etc.):
+- Default to read-only: read/plan as much as needed, then stop just before editing and report the intended edits + exact target files
+- Before editing: check `git status -sb` and relevant `git diff` to avoid clobbering another agent’s pending changes
+- While editing: announce which files you will touch; keep changes small; avoid repo-wide formatters/codegen unless explicitly coordinated
+- When committing: use `committer "..." <paths...>`; do not rely on staged state persisting between steps
+- Treat other agents’ edits (esp. Claude/Gemini) as unreviewed diffs: keep good ideas, normalize style/structure, verify correctness
+- If collisions recur: prefer separate branches or `git worktree add` per agent
 
 ---
 
@@ -156,6 +176,14 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 | `docs-list` | List + sanity-check `docs/**/*.md` summaries (available via `~/agent-scripts/bin`) |
 
 Local tools live in `~/agent-scripts/bin` (add to `PATH`).
+
+Required defaults:
+- Search: use `rg` first; use `ast-grep` when structure matters
+- GitHub/CI: use `gh` (avoid browser-driven workflows)
+- Deletes: use `trash <paths...>`; do not use `rm` unless explicitly requested
+- Remote copy: use `rsync` over `scp`
+- Commits: use `committer "<type>: <msg>" <paths...>` (stages only listed paths; uses an isolated `GIT_INDEX_FILE` per run)
+- Docs: if `docs/` exists, run `docs-list` early (if available)
 
 ## Python
 
@@ -206,18 +234,9 @@ Only confirm before:
 
 - Single source of truth: edit `~/agent-scripts/AGENTS.md`, `~/agent-scripts/prompts/`, and `~/agent-scripts/skills/` (harness dirs like `~/.codex/*`, `~/.pi/agent/*`, `~/.claude/*` should be symlinks into `~/agent-scripts`).
 - Check for `REPO_GUIDE.md` to understand repo structure before scanning files manually
-- If a repo has `docs/`, run `docs-list` (if available) to discover relevant docs quickly
-- When creating/editing docs under `docs/`, include YAML front matter with `summary` + `read_when` hints; keep `docs-list` output clean (no missing front matter).
 - Do not read `.env` files unless explicitly granted permission
 - Keep files under ~500 lines; mention refactor paths for larger files
 - For bug fixes, propose regression tests when sensible
-
-## Multi-Agent Context
-
-Claude/Gemini may have edited code before you see it. Treat their changes like an eager linter:
-- Reuse good ideas
-- Clean up messy formatting/structure
-- Never assume their changes are correct without checking
 
 ---
 
