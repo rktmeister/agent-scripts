@@ -143,6 +143,7 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 - Use Conventional Commits: `feat` / `fix` / `refactor` / `build` / `ci` / `chore` / `docs` / `style` / `perf` / `test` / `revert`
 - Custom scopes allowed (e.g., `macos`, `docker`)
 - Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
+- Note: `committer` uses an isolated index, so the shared index may look stale after commits; run `git restore --staged :/` (or `git reset`) to sync status to `HEAD` if you don’t need staged changes
 - Avoid manual `git add -A`, `git add .`, `git commit`, or interactive staging unless explicitly requested (or required by the repo’s workflow)
 - Multi-agent safety (same worktree): treat the Git index (staging area) as shared state; prefer `committer` (uses an isolated index per invocation) and avoid relying on staged changes persisting
 - **Never proactively suggest** history-rewriting commands (`rebase`, `reset --hard`, `push --force`) unless explicitly requested
