@@ -50,8 +50,22 @@ for file in "${files[@]}"; do
   fi
 done
 
-# Validate paths exist (or are valid tracked paths for deletions).
-# Do this against the *real* index/HEAD; we don't want to depend on our isolated index.
+last_commit_error=''
+
+run_git_commit() {
+  local stderr_log
+  stderr_log=$(mktemp)
+  if git commit -m "$commit_message" -- "${files[@]}" 2> >(tee "$stderr_log" >&2); then
+    rm -f "$stderr_log"
+    last_commit_error=''
+    return 0
+  fi
+
+  last_commit_error=$(cat "$stderr_log")
+  rm -f "$stderr_log"
+  return 1
+}
+
 head_ok=false
 if git rev-parse --verify HEAD >/dev/null 2>&1; then
   head_ok=true
@@ -75,100 +89,16 @@ for file in "${files[@]}"; do
   fi
 done
 
-# Warn if the user already has staged changes in the shared index.
-# We do NOT touch the shared index; this helper uses an isolated index per invocation.
 if ! git diff --staged --quiet; then
-  printf 'Warning: existing staged changes detected; committer will not use or modify them\n' >&2
+  printf 'Warning: existing staged changes detected; committer will unstage them (git restore --staged :/)\n' >&2
 fi
 
-last_commit_error=''
-
-run_git_commit() {
-  local stderr_log
-  stderr_log=$(mktemp)
-  if git commit -m "$commit_message" 2> >(tee "$stderr_log" >&2); then
-    rm -f "$stderr_log"
-    last_commit_error=''
-    return 0
-  fi
-
-  last_commit_error=$(cat "$stderr_log")
-  rm -f "$stderr_log"
-  return 1
-}
-
-# Serialize commits to avoid two committer invocations racing and producing commits based on a stale HEAD.
-# This does not prevent *manual* git commits; the guardrail is to always use committer.
-git_dir=$(git rev-parse --git-dir)
-lock_dir_path="$git_dir/.committer-lock"
-lock_acquired=false
-
-tmp_index=''
-base_head=''
-
-cleanup() {
-  if [ -n "${tmp_index:-}" ]; then
-    rm -f "$tmp_index" "$tmp_index.lock" 2>/dev/null || true
-  fi
-
-  # Only remove the commit lock if we acquired it.
-  if [ "$lock_acquired" = true ] && [ -n "${lock_dir_path:-}" ]; then
-    rm -rf "$lock_dir_path" 2>/dev/null || true
-  fi
-}
-trap cleanup EXIT
-
-acquire_lock() {
-  while true; do
-    if mkdir "$lock_dir_path" 2>/dev/null; then
-      lock_acquired=true
-      printf '%s\n' "$$" >"$lock_dir_path/pid"
-      date +%s >"$lock_dir_path/ts" 2>/dev/null || true
-      return 0
-    fi
-
-    # Auto-clear stale lock if owning PID is gone.
-    if [ -f "$lock_dir_path/pid" ]; then
-      local owner_pid
-      owner_pid=$(cat "$lock_dir_path/pid" 2>/dev/null || true)
-      if [ -n "$owner_pid" ] && ! kill -0 "$owner_pid" 2>/dev/null; then
-        rm -rf "$lock_dir_path" 2>/dev/null || true
-        continue
-      fi
-    fi
-
-    sleep 0.1
-  done
-}
-
-acquire_lock
-
-# Isolated index: prevents stomping other agents' staged state in .git/index.
-tmp_index=$(mktemp "${TMPDIR:-/tmp}/committer-index.XXXXXX")
-export GIT_INDEX_FILE="$tmp_index"
-
-if git rev-parse --verify HEAD >/dev/null 2>&1; then
-  base_head=$(git rev-parse HEAD)
-  git read-tree HEAD
-else
-  base_head=''
-  git read-tree --empty
-fi
-
+git restore --staged :/
 git add -A -- "${files[@]}"
 
 if git diff --staged --quiet; then
   printf 'Warning: no staged changes detected for: %s\n' "${files[*]}" >&2
   exit 1
-fi
-
-# If HEAD moved since we populated the index (shouldn't happen if everyone uses committer), abort.
-if [ -n "$base_head" ]; then
-  current_head=$(git rev-parse HEAD)
-  if [ "$current_head" != "$base_head" ]; then
-    printf 'Error: HEAD moved while preparing commit (%s -> %s); re-run committer\n' "$base_head" "$current_head" >&2
-    exit 1
-  fi
 fi
 
 committed=false
