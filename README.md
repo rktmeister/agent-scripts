@@ -111,11 +111,34 @@ Source: `scripts/committer` (copied into `bin/committer` by `bun run build`).
 
 ## prompts
 
-Prompt templates live in `./prompts/*.md`.
+Global slash-command prompt templates.
+
+These are intended to be the symlink target, with harness directories pointing here:
+- Pi: `~/.pi/agent/prompts` → `~/agent-scripts/prompts`
+- Codex: `~/.codex/prompts` → `~/agent-scripts/prompts`
+
+Each `*.md` filename becomes a `/command` (e.g. `pickup.md` → `/pickup`).
+
+Notes:
+- Pi only documents `description` in YAML front matter. Extra keys like `argument-hint` are harmless, but may not show in Pi UI.
+- For Pi, prefer a short `Args:` line in the prompt body so the model sees it.
+
+Args:
+- `$1` = first argument
+- `$@` = all arguments joined
 
 ## skills
 
-Agent skills live in `./skills/**/SKILL.md`.
+Agent skills (Agent Skills spec) live under `./skills/<name>/SKILL.md`.
+
+These are intended to be the **symlink target**, with harness directories pointing here:
+- Pi: `~/.pi/agent/skills` → `~/agent-scripts/skills`
+- Codex: `~/.codex/skills` → `~/agent-scripts/skills`
+- Claude: `~/.claude/skills` → `~/agent-scripts/skills`
+
+If you see “name collision” warnings in Pi, it’s usually because the same skill name exists in multiple scanned roots (global + project-local).
+
+Note: keep non-skill Markdown out of `./skills/` (Pi may interpret it as a skill).
 
 ## Adding new tools
 
