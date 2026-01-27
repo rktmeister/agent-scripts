@@ -8,7 +8,9 @@ argument-hint: |
 
 Args: `$1` = PR number or URL (required).
 
-Land PR: rebase onto a temp base branch, fix+tests+changelog, run the full repo gate before commit, commit via `committer`, push updated PR branch, merge PR, sync base, comment with SHAs, verify `MERGED`, delete temp branch.
+Land PR: rebase onto a temp base branch, fix+tests+changelog, run the full repo gate before commit, commit via `committer`, push updated PR branch, merge PR, sync base, comment with SHAs, verify GitHub state == `MERGED` (never `CLOSED`), delete temp branch.
+
+Merge requirement: use `gh pr merge` with `--rebase` or `--squash` (never `gh pr close`).
 
 Input
 - PR: `<pr-number-or-url>`
@@ -52,8 +54,10 @@ Do (end-to-end)
 10) Push updated PR branch (rebase => usually needs force):
 - `git push --force-with-lease`
 
-11) Merge PR:
-- `gh pr merge "$pr" --merge`
+11) Merge PR (must show `MERGED` on GitHub; never `gh pr close`):
+- If merge strategy is unclear, ask. Otherwise pick one:
+  - Rebase: `gh pr merge "$pr" --rebase`
+  - Squash: `gh pr merge "$pr" --squash`
 
 12) Sync `$base` + push:
 - `git checkout "$base"`
@@ -62,10 +66,10 @@ Do (end-to-end)
 
 13) Comment on PR with what we did + SHAs + thanks:
 - `merge_sha=$(gh pr view "$pr" --json mergeCommit --jq '.mergeCommit.oid')`
-- `gh pr comment "$pr" --body "Landed via temp rebase onto $base.\n\n- Gate: <describe the gate you ran>\n- Land commit: $land_sha\n- Merge commit: $merge_sha\n\nThanks @$contrib!"`
+- `gh pr comment "$pr" --body "Landed via temp base branch onto $base.\n\n- Merge strategy: <rebase|squash>\n- Gate: <describe the gate you ran>\n- Land commit: $land_sha\n- Merge commit: $merge_sha\n\nThanks @$contrib!"`
 
 14) Verify PR state == `MERGED`:
-- `gh pr view "$pr" --json state --jq .state`
+- `gh pr view "$pr" --json state,mergedAt --jq '.state + " @ " + .mergedAt'`
 
 15) Delete temp branch:
 - `git branch -d "temp/landpr-$pr"`
