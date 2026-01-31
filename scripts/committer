@@ -36,6 +36,22 @@ if [ -e "$commit_message" ]; then
   exit 1
 fi
 
+# Optional Pi session trailer (disabled by default). Enable per-repo with:
+#   git config pi.git.commit.piSession.enabled true
+#
+# When enabled and PI_SESSION_ID is set (e.g. via a Pi extension), we append:
+#   Pi-Session: <uuid>
+pi_session_enabled="$(git config --bool --get pi.git.commit.piSession.enabled 2>/dev/null || echo "false")"
+if [ "$pi_session_enabled" = "true" ] && [ -n "${PI_SESSION_ID:-}" ]; then
+  if ! printf '%s\n' "$commit_message" | grep -q '^Pi-Session:'; then
+    # Strip trailing newlines so we don't accumulate blank lines across repeated runs.
+    while [[ "$commit_message" == *$'\n' ]]; do
+      commit_message="${commit_message%$'\n'}"
+    done
+    commit_message="${commit_message}"$'\n\n'"Pi-Session: ${PI_SESSION_ID}"
+  fi
+fi
+
 if [ "$#" -eq 0 ]; then
   usage
 fi
@@ -123,4 +139,5 @@ if [ "$committed" = false ]; then
   exit 1
 fi
 
-printf 'Committed "%s" with %d files\n' "$commit_message" "${#files[@]}"
+commit_subject="${commit_message%%$'\n'*}"
+printf 'Committed "%s" with %d files\n' "$commit_subject" "${#files[@]}"
