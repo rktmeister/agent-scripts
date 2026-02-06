@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+usage() {
+  printf 'Usage: %s <branch> [base]\n' "$(basename "$0")" >&2
+  printf '\n' >&2
+  printf 'Ensures a dedicated git worktree for <branch> at: <repo-root>/.worktrees/<branch>\n' >&2
+  printf '(one worktree per branch)\n' >&2
+  printf 'Prints the worktree path on success.\n' >&2
+  exit 2
+}
+
+if [ "${1:-}" = "-h" ] || [ "${1:-}" = "--help" ]; then
+  usage
+fi
+
+if [ "$#" -lt 1 ] || [ "$#" -gt 2 ]; then
+  usage
+fi
+
+branch=$1
+base=${2:-}
+
+if [[ "$branch" != *[![:space:]]* ]]; then
+  printf 'Error: branch name cannot be empty\n' >&2
+  exit 2
+fi
+
+if [[ "$branch" == /* ]]; then
+  printf "Error: branch name cannot start with '/'\n" >&2
+  exit 2
+fi
+
+IFS='/' read -r -a branch_parts <<<"$branch"
+for part in "${branch_parts[@]}"; do
+  if [ "$part" = ".." ]; then
+    printf "Error: branch name cannot contain '..'\n" >&2
+    exit 2
+  fi
+done
+
+root=''
+
+if [ "$(git rev-parse --is-bare-repository 2>/dev/null || true)" = "true" ]; then
+  root="$(pwd -P)"
+else
+  common_dir="$(git rev-parse --path-format=absolute --git-common-dir 2>/dev/null || true)"
+  if [ -z "$common_dir" ]; then
+    common_dir="$(git rev-parse --git-common-dir 2>/dev/null || true)"
+    if [ -z "$common_dir" ]; then
+      printf 'Error: not in a git repository\n' >&2
+      exit 1
+    fi
+    if [[ "$common_dir" != /* ]]; then
+      common_dir="$(cd "$common_dir" && pwd -P)"
+    fi
+  fi
+  root="$(cd "$(dirname "$common_dir")" && pwd -P)"
+fi
+
+worktrees_root="${GIT_WORKTREES_DIR:-$root/.worktrees}"
+wt_path="${worktrees_root%/}/$branch"
+
+mkdir -p "$(dirname "$wt_path")"
+
+if [ -e "$wt_path" ]; then
+  top="$(git -C "$wt_path" rev-parse --show-toplevel 2>/dev/null || true)"
+  if [ -z "$top" ]; then
+    printf 'Error: %s exists but is not a git worktree\n' "$wt_path" >&2
+    exit 1
+  fi
+  wt_abs="$(cd "$wt_path" && pwd -P)"
+  top_abs="$(cd "$top" && pwd -P)"
+  if [ "$wt_abs" != "$top_abs" ]; then
+    printf 'Error: %s exists but is not a git worktree\n' "$wt_path" >&2
+    exit 1
+  fi
+  printf '%s\n' "$wt_abs"
+  exit 0
+fi
+
+if git -C "$root" show-ref --verify --quiet "refs/heads/$branch"; then
+  git -C "$root" worktree add "$wt_path" "$branch" 1>&2
+  printf '%s\n' "$wt_path"
+  exit 0
+fi
+
+if git -C "$root" show-ref --verify --quiet "refs/remotes/origin/$branch"; then
+  git -C "$root" worktree add -b "$branch" "$wt_path" "origin/$branch" 1>&2
+  printf '%s\n' "$wt_path"
+  exit 0
+fi
+
+if [ -z "$base" ]; then
+  origin_head="$(git -C "$root" symbolic-ref -q refs/remotes/origin/HEAD 2>/dev/null || true)"
+  if [[ -n "$origin_head" && "$origin_head" == refs/remotes/origin/* ]]; then
+    base="${origin_head#refs/remotes/origin/}"
+  fi
+fi
+
+if [ -z "$base" ]; then
+  current="$(git -C "$root" branch --show-current 2>/dev/null || true)"
+  if [ -n "$current" ]; then
+    base="$current"
+  fi
+fi
+
+if [ -z "$base" ] && git -C "$root" show-ref --verify --quiet refs/heads/master; then
+  base="master"
+fi
+
+if [ -z "$base" ] && git -C "$root" show-ref --verify --quiet refs/heads/main; then
+  base="main"
+fi
+
+if [ -z "$base" ]; then
+  printf 'Error: cannot determine base ref (pass it as the 2nd arg)\n' >&2
+  exit 1
+fi
+
+git -C "$root" worktree add -b "$branch" "$wt_path" "$base" 1>&2
+printf '%s\n' "$wt_path"

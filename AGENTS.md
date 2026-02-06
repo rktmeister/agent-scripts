@@ -37,6 +37,25 @@
 3. Performance
 4. Code brevity
 
+## Engineering Principles
+
+- **One path per use-case** — if a supported mode already exists (build system, config format, deployment method), use it; don't introduce a parallel way to do the same thing without explicit justification
+- **Fail fast, fail loud** — prefer explicit errors over silent degradation; never swallow exceptions without logging; surface actionable context in error messages
+- **One source of truth** — config, state, and schemas live in exactly one place; don't duplicate data that can drift
+
+## Per-Change Rubric
+
+Before proposing any non-trivial change, run through this checklist:
+
+- **Intent** — does this directly serve the explicit request? If not, why is it here?
+- **Surface area** — did we add new public APIs, config knobs, or dependencies? Could we avoid it?
+- **Blast radius** — how many files/modules does this touch? Is that proportional to the task?
+- **Uniqueness** — are we creating a second way to do something that already works?
+- **Simplicity** — is the code visibly simpler or more complex afterward?
+- **Reversibility** — can this be undone easily, or does it create lock-in?
+
+If any answer is unsatisfying, reconsider the approach before presenting it.
+
 ## Bad Smells to Flag
 
 - Repeated logic / copy-paste code
@@ -142,6 +161,12 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 
 - Use Conventional Commits: `feat` / `fix` / `refactor` / `build` / `ci` / `chore` / `docs` / `style` / `perf` / `test` / `revert`
 - Custom scopes allowed (e.g., `macos`, `docker`)
+- Commit message writing:
+  - Subject: `<type>(<scope>): <summary>` (imperative, no trailing period, keep it short; use `!` for breaking changes)
+  - Body (recommended for non-trivial changes): 1–3 short paragraphs explaining intent/behavior change and any non-obvious details. Prefer concise prose over rigid templates.
+  - If you ran commands/tests, add a final line like: `Ran: <cmd>`
+  - Optional trailers: `Refs: #123`, `Closes: #123`, etc.
+- Optional Pi session trailer (disabled by default): enable per-repo with `git config pi.git.commit.piSession.enabled true`. When enabled and `PI_SESSION_ID` is available (interactive Pi), `committer` appends: `Pi-Session: <uuid>`
 - Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
 - Note: `committer` operates on the shared index; it will unstage any existing staged changes (`git restore --staged :/`) before staging/committing the paths you specify
 - Sanity-check “real” changes vs the last commit with `git diff HEAD -- <path>` (or `git diff HEAD`) and check what your shared index thinks is staged with `git diff --cached HEAD`
@@ -160,7 +185,7 @@ When multiple agents share one worktree (Codex + Claude + Gemini, etc.):
 - While editing: announce which files you will touch; keep changes small; avoid repo-wide formatters/codegen unless explicitly coordinated
 - When committing: use `committer "..." <paths...>`; do not rely on staged state persisting between steps
 - Treat other agents’ edits (esp. Claude/Gemini) as unreviewed diffs: keep good ideas, normalize style/structure, verify correctness
-- If collisions recur: prefer separate branches or `git worktree add` per agent
+- If collisions recur: prefer separate branches or a dedicated worktree per agent via `gwt <branch>` (one worktree per branch under `.worktrees/<branch>`)
 
 ---
 
@@ -174,6 +199,7 @@ When multiple agents share one worktree (Codex + Claude + Gemini, etc.):
 | `gh` | GitHub CLI operations |
 | `browser-tools` | Chrome DevTools automation helper (available via `~/agent-scripts/bin`) |
 | `committer` | Commit helper (available via `~/agent-scripts/bin`) |
+| `gwt` | Create/ensure dedicated per-branch git worktrees under `.worktrees/` |
 | `trash` | Safe deletions (available via `~/agent-scripts/bin`) |
 | `docs-list` | List + sanity-check `docs/**/*.md` summaries (available via `~/agent-scripts/bin`) |
 

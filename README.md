@@ -109,6 +109,23 @@ committer --force "fix: message" path/to/file   # clears stale .git/index.lock i
 
 Source: `scripts/committer` (copied into `bin/committer` by `bun run build`).
 
+## gwt
+
+Create/ensure a dedicated per-branch worktree under `.worktrees/` (one worktree per branch).
+
+```bash
+gwt feat/my-branch
+cd "$(gwt feat/my-branch)"
+```
+
+Optional override:
+
+```bash
+GIT_WORKTREES_DIR=~/.worktrees/my-repo gwt feat/my-branch
+```
+
+Source: `scripts/gwt` (copied into `bin/gwt` by `bun run build`).
+
 ## prompts
 
 Global slash-command prompt templates.
