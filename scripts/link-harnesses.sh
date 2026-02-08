@@ -44,8 +44,9 @@ link_path "$ROOT/AGENTS.md" "$HOME/.pi/agent/AGENTS.md"
 link_path "$ROOT/prompts" "$HOME/.pi/agent/prompts"
 link_path "$ROOT/skills" "$HOME/.pi/agent/skills"
 
-# Claude Code (skills only; project-local .claude/skills still override per-cwd)
+# Claude Code
 mkdir -p "$HOME/.claude"
+link_path "$ROOT/AGENTS.md" "$HOME/.claude/CLAUDE.md"
 link_path "$ROOT/skills" "$HOME/.claude/skills"
 
 printf '\nDone.\n' >&2
