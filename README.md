@@ -55,6 +55,22 @@ Recommendation:
 - ignore harness-owned paths (e.g. `~/.codex/{AGENTS.md,prompts,skills}`, `~/.claude/skills`) in your stow config
 - then run `~/agent-scripts/scripts/link-harnesses.sh` after stow to reassert canonical links
 
+## SSH in sandboxed runs
+
+When running under Linux bubblewrap sandbox, prefer an explicit user SSH config file:
+
+```bash
+ssh -F ~/.ssh/config -i "$CODEX_SSH_KEY" -o BatchMode=yes -o ConnectTimeout=10 <host>
+```
+
+Why:
+- Avoids failures from system config includes like `/etc/ssh/ssh_config.d/*` that can be unreadable in sandboxed contexts
+- Keeps host aliases from your own `~/.ssh/config`
+
+Notes:
+- Use a host alias that exists in `~/.ssh/config`
+- If an alias does not exist, add it there instead of relying on system config
+
 ## Build a single tool
 
 ```bash
@@ -142,7 +158,8 @@ Notes:
 
 Args:
 - `$1` = first argument
-- `$@` = all arguments joined
+- `$ARGUMENTS` = all arguments joined
+- Prefer `$ARGUMENTS` for cross-harness portability (Codex + Pi).
 
 ## skills
 
