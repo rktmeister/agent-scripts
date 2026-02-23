@@ -6,7 +6,7 @@ argument-hint: |
 
 # /sync-docs
 
-Args: optional list of docs files you touched in `$@`.
+Args: optional list of docs files you touched in `$ARGUMENTS`.
 
 Goal: keep `docs/` discoverable and `docs-list` clean after doc changes.
 

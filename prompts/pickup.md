@@ -6,7 +6,7 @@ argument-hint: |
 
 # /pickup
 
-Args: optional context in `$@` (PR number/URL, branch name, 1-line goal).
+Args: optional context in `$ARGUMENTS` (PR number/URL, branch name, 1-line goal).
 
 Purpose: rehydrate context quickly when you start work.
 

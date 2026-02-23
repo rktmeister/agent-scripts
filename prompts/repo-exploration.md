@@ -6,7 +6,7 @@ argument-hint: |
 
 # /repo-exploration
 
-Args: `$@` optional focus area(s) or constraints (e.g. "backend only", "docs first", "skip build"). If omitted, do a full repo scan.
+Args: `$ARGUMENTS` optional focus area(s) or constraints (e.g. "backend only", "docs first", "skip build"). If omitted, do a full repo scan.
 
 Goal: explore this repo efficiently and write a factual, concise `REPO_GUIDE.md` that future agents can read first instead of re-discovering structure every session.
 

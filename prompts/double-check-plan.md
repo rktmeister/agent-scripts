@@ -7,4 +7,4 @@ Great, now I want you to carefully read over the plan/spec and compare against t
 - If you find ANY issues: fix them, then list what you fixed. Do NOT say "no issues found" - instead end with "Fixed [N] issue(s). Ready for another review."
 - If you find ZERO issues: respond with exactly "No issues found."
 
-$@
+$ARGUMENTS

@@ -6,7 +6,7 @@ argument-hint: |
 
 # /repo-guide-update
 
-Args: `$@` optional focus area(s) or constraints (e.g. "only build/run section", "new architecture only"). If omitted, update all stale parts.
+Args: `$ARGUMENTS` optional focus area(s) or constraints (e.g. "only build/run section", "new architecture only"). If omitted, update all stale parts.
 
 Goal: update `REPO_GUIDE.md` to reflect current reality (refactors, new features, API changes, new tooling), without rewriting it from scratch.
 

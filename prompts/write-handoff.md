@@ -10,7 +10,7 @@ argument-hint: |
 
 # /handoff
 
-Args: `$@` = goal for the next thread and/or emphasis.
+Args: `$ARGUMENTS` = goal for the next thread and/or emphasis.
 
 Purpose: produce a **goal-conditioned handoff packet** so the next session/agent can continue without re-discovering context.
 
@@ -23,8 +23,8 @@ Principles:
 ## What to do
 
 1) Determine the **handoff goal**
-- Use `$@` as the primary goal.
-- If `$@` is empty, infer the most likely “next step” goal from the conversation.
+- Use `$ARGUMENTS` as the primary goal.
+- If `$ARGUMENTS` is empty, infer the most likely “next step” goal from the conversation.
 
 2) Extract **scope + status**
 - What we were trying to do (original scope)
@@ -87,4 +87,4 @@ Then append file lists:
 
 If a detail is unknown, say so explicitly instead of guessing.
 
-Optional: if asked in `$@` (e.g. “write HANDOFF.md”), write the final handoff packet to `HANDOFF.md` in the repo root as well.
+Optional: if asked in `$ARGUMENTS` (e.g. “write HANDOFF.md”), write the final handoff packet to `HANDOFF.md` in the repo root as well.

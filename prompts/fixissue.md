@@ -9,7 +9,7 @@ argument-hint: |
 
 # /fixissue
 
-Args: `$1` = issue number/URL (recommended). `$@` = any additional context.
+Args: `$1` = issue number/URL (recommended). `$ARGUMENTS` = any additional context.
 
 Purpose: fix an issue end-to-end, with regression tests and proper follow-through.
 
