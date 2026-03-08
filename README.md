@@ -101,8 +101,8 @@ trash --allow-missing path/that/might/not/exist
 
 Chrome DevTools automation via CLI.
 
-```
-browser-tools start [--port 9222]     Start Chrome with remote debugging
+```bash
+browser-tools start [--port 9222]     Start Chrome/Chromium with remote debugging
 browser-tools nav <url>               Navigate to URL
 browser-tools eval '<js>'             Execute JavaScript in page
 browser-tools screenshot [file]       Capture viewport as PNG
@@ -112,7 +112,45 @@ browser-tools search <query>          Google search
 browser-tools content <url>           Extract page content as markdown
 browser-tools tabs                    List open tabs
 browser-tools kill                    Kill Chrome processes
+browser-tools start --profile-dir "$HOME/.cache/browser-tools/work" --profile-directory <profile-directory>
+browser-tools start --profile --profile-directory <profile-directory> --profile-dir "$HOME/.cache/browser-tools/work"
+browser-tools start --profile --profile-source <browser-user-data-dir> --profile-directory <profile-directory> --profile-dir "$HOME/.cache/browser-tools/work"
 ```
+
+Use the persistent `work` automation profile by default so agents share the same logged-in browser state.
+
+### Seed the persistent agent profile
+
+Seed once by copying the browser user-data dir that contains the profile you want agents to reuse. Use the browser's internal profile directory name, usually `Default` or `Profile 1`, not necessarily the profile label shown in the UI.
+
+One-time seed:
+
+```bash
+cd /path/to/agent-scripts
+bin/browser-tools start --profile --profile-directory <profile-directory> --profile-dir "$HOME/.cache/browser-tools/work"
+```
+
+If auto-detection picks the wrong source browser dir, run:
+
+```bash
+cd /path/to/agent-scripts
+bin/browser-tools start --profile --profile-source <browser-user-data-dir> --profile-directory <profile-directory> --profile-dir "$HOME/.cache/browser-tools/work"
+```
+
+This copies the chosen browser profile into the dedicated agent profile dir `~/.cache/browser-tools/work`.
+
+Steady-state agent launch:
+
+```bash
+cd /path/to/agent-scripts
+bin/browser-tools start --profile-dir "$HOME/.cache/browser-tools/work" --profile-directory <profile-directory>
+```
+
+Notes:
+- Reuse `~/.cache/browser-tools/work` for every agent run after the initial seed.
+- `--profile-directory` should be the internal profile directory name inside the browser user-data dir, for example `Default` or `Profile 1`.
+- Do not point `--profile-dir` at the live browser config; copy it once, then reuse the dedicated automation profile.
+- Do not launch multiple Chrome or Chromium processes against the same profile dir at the same time.
 
 ## committer
 

@@ -9,6 +9,7 @@
  */
 import { Command } from 'commander';
 import { execSync, spawn } from 'node:child_process';
+import { existsSync, mkdirSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import http from 'node:http';
 import os from 'node:os';
@@ -23,7 +24,13 @@ type AsyncFunctionCtor = new (...args: string[]) => (...fnArgs: unknown[]) => Pr
 
 const DEFAULT_PORT = 9222;
 const DEFAULT_PROFILE_DIR = path.join(os.homedir(), '.cache', 'scraping');
-const DEFAULT_CHROME_BIN = '/usr/bin/google-chrome';
+const DEFAULT_CHROME_BIN = firstExistingPath(['/usr/bin/google-chrome', '/usr/bin/chromium-browser', '/usr/bin/chromium']) ?? '/usr/bin/google-chrome';
+const DEFAULT_PROFILE_SOURCE_DIR =
+  firstExistingPath([path.join(os.homedir(), '.config', 'google-chrome'), path.join(os.homedir(), '.config', 'chromium')]) ?? undefined;
+
+function firstExistingPath(paths: string[]): string | undefined {
+  return paths.find((candidate) => existsSync(candidate));
+}
 
 function browserURL(port: number): string {
   return `http://localhost:${port}`;
@@ -55,18 +62,27 @@ program
   .command('start')
   .description('Launch Chrome with remote debugging enabled.')
   .option('-p, --port <number>', 'Remote debugging port (default: 9222)', (value) => Number.parseInt(value, 10), DEFAULT_PORT)
-  .option('--profile', 'Copy your default Chrome profile before launch.', false)
+  .option('--profile', 'Copy an existing Chrome/Chromium user-data dir before launch.', false)
+  .option('--profile-source <path>', 'Source user-data dir to copy when using --profile.', DEFAULT_PROFILE_SOURCE_DIR)
   .option('--profile-dir <path>', 'Directory for the temporary Chrome profile.', DEFAULT_PROFILE_DIR)
+  .option('--profile-directory <name>', 'Profile directory inside the user-data dir to open (for example: Default, Profile 1).')
   .option('--chrome-path <path>', 'Path to the Chrome binary.', DEFAULT_CHROME_BIN)
   .option('--kill-existing', 'Stop any running Google Chrome before launch (default: false).', false)
   .action(async (options) => {
-    const { port, profile, profileDir, chromePath, killExisting } = options as {
+    const { port, profile, profileSource, profileDir, profileDirectory, chromePath, killExisting } = options as {
       port: number;
       profile: boolean;
+      profileSource?: string;
       profileDir: string;
+      profileDirectory?: string;
       chromePath: string;
       killExisting: boolean;
     };
+
+    if (!existsSync(chromePath)) {
+      console.error(`✗ Chrome binary not found at ${chromePath}`);
+      process.exit(1);
+    }
 
     if (killExisting) {
       try {
@@ -76,13 +92,29 @@ program
       }
       await new Promise((resolve) => setTimeout(resolve, 1000));
     }
-    execSync(`mkdir -p "${profileDir}"`);
+
+    mkdirSync(profileDir, { recursive: true });
+    let copiedFrom: string | undefined;
     if (profile) {
-      const source = `${path.join(os.homedir(), '.config', 'google-chrome')}/`;
-      execSync(`rsync -a --delete "${source}" "${profileDir}/"`, { stdio: 'ignore' });
+      const source = profileSource;
+      if (!source) {
+        console.error('✗ No profile source found. Pass --profile-source <path> or create a fresh profile without --profile.');
+        process.exit(1);
+      }
+      if (!existsSync(source)) {
+        console.error(`✗ Profile source does not exist: ${source}`);
+        process.exit(1);
+      }
+      execSync(`rsync -a --delete "${source}/" "${profileDir}/"`, { stdio: 'ignore' });
+      copiedFrom = source;
     }
 
-    spawn(chromePath, [`--remote-debugging-port=${port}`, `--user-data-dir=${profileDir}`, '--no-first-run', '--disable-popup-blocking'], {
+    const chromeArgs = [`--remote-debugging-port=${port}`, `--user-data-dir=${profileDir}`, '--no-first-run', '--disable-popup-blocking'];
+    if (profileDirectory) {
+      chromeArgs.push(`--profile-directory=${profileDirectory}`);
+    }
+
+    spawn(chromePath, chromeArgs, {
       detached: true,
       stdio: 'ignore',
     }).unref();
@@ -103,7 +135,15 @@ program
       console.error(`✗ Failed to start Chrome on port ${port}`);
       process.exit(1);
     }
-    console.log(`✓ Chrome listening on http://localhost:${port}${profile ? ' (profile copied)' : ''}`);
+
+    const details = [`✓ Chrome listening on http://localhost:${port}`, `using ${profileDir}`];
+    if (copiedFrom) {
+      details.push(`copied from ${copiedFrom}`);
+    }
+    if (profileDirectory) {
+      details.push(`profile ${profileDirectory}`);
+    }
+    console.log(details.join(' | '));
   });
 
 program
