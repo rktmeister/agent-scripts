@@ -190,7 +190,9 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 - Optional Pi session trailer (disabled by default): enable per-repo with `git config pi.git.commit.piSession.enabled true`. When enabled and `PI_SESSION_ID` is available (interactive Pi), `committer` appends: `Pi-Session: <uuid>`
 - Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
 - Note: `committer` operates on the shared index; it will unstage any existing staged changes (`git restore --staged :/`) before staging/committing the paths you specify
+- For any content diff inspection, prefer difftastic-backed Git commands: `git dft`, `git dshow`, and `git dlog`; reserve plain `git diff` for inventory or special views such as `--stat`, `--name-only`, `--check`, `--diff-filter=U`, and `--cc`
 - Sanity-check "real" changes vs the last commit with `git dft HEAD -- <path>` (or `git dft HEAD`) and check what your shared index thinks is staged with `git dft --cached HEAD`; use plain `git diff --stat` or `git diff --name-only` when you only need file inventory
+- When resolving merge or rebase conflicts, list unmerged paths with `git diff --name-only --diff-filter=U`, then inspect each conflicted file with `git dft --ours -- <path>`, `git dft --theirs -- <path>`, and `git dft --base -- <path>`; fall back to `git diff --cc -- <path>` only when you specifically need the combined patch view
 - Avoid manual `git add -A`, `git add .`, `git commit`, or interactive staging unless explicitly requested (or required by the repo's workflow)
 - Multi-agent safety (same worktree): treat the Git index (staging area) as shared state; prefer `committer` and avoid relying on staged changes persisting
 - **Never proactively suggest** history-rewriting commands (`rebase`, `reset --hard`, `push --force`) unless explicitly requested

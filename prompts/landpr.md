@@ -37,7 +37,7 @@ Do (end-to-end)
 
 6) Rebase PR branch onto temp base:
 - `git rebase "temp/landpr-$pr"`
-- Resolve conflicts; keep history tidy.
+- If conflicts happen, list unmerged files with `git diff --name-only --diff-filter=U`, inspect each one with `git dft --ours -- <path>`, `git dft --theirs -- <path>`, and `git dft --base -- <path>`, then resolve and keep history tidy.
 
 7) Fix + tests + changelog:
 - Implement fixes + add/adjust tests.
