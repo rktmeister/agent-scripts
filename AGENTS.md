@@ -190,19 +190,19 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 - Optional Pi session trailer (disabled by default): enable per-repo with `git config pi.git.commit.piSession.enabled true`. When enabled and `PI_SESSION_ID` is available (interactive Pi), `committer` appends: `Pi-Session: <uuid>`
 - Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
 - Note: `committer` operates on the shared index; it will unstage any existing staged changes (`git restore --staged :/`) before staging/committing the paths you specify
-- Sanity-check "real" changes vs the last commit with `git diff HEAD -- <path>` (or `git diff HEAD`) and check what your shared index thinks is staged with `git diff --cached HEAD`
+- Sanity-check "real" changes vs the last commit with `git dft HEAD -- <path>` (or `git dft HEAD`) and check what your shared index thinks is staged with `git dft --cached HEAD`; use plain `git diff --stat` or `git diff --name-only` when you only need file inventory
 - Avoid manual `git add -A`, `git add .`, `git commit`, or interactive staging unless explicitly requested (or required by the repo's workflow)
 - Multi-agent safety (same worktree): treat the Git index (staging area) as shared state; prefer `committer` and avoid relying on staged changes persisting
 - **Never proactively suggest** history-rewriting commands (`rebase`, `reset --hard`, `push --force`) unless explicitly requested
 - Use `gh` CLI for GitHub interactions
-- PRs/CI: prefer `gh pr view`, `gh pr diff`, `gh run list`, `gh run view` over web browsing
+- PRs/CI: prefer `gh pr view`, `gh run list`, and `gh run view` over web browsing; when the branch is available locally, prefer `git dft <base>...HEAD` over `gh pr diff` for code review
 - Need to import an upstream file: stage it in `/tmp/` first, then copy/cherry-pick changes; never blindly overwrite tracked files
 
 ## Multi-Agent
 
 When multiple agents share one worktree (Codex + Claude + Gemini, etc.):
 - If concurrent edits are likely, coordinate before editing: report intended edits + exact target files, then proceed once clear.
-- Before editing: check `git status -sb` and relevant `git diff` to avoid clobbering another agent's pending changes
+- Before editing: check `git status -sb` and relevant `git dft` output to avoid clobbering another agent's pending changes
 - While editing: announce which files you will touch; keep changes small; avoid repo-wide formatters/codegen unless explicitly coordinated
 - When committing: use `committer "..." <paths...>`; do not rely on staged state persisting between steps
 - Treat other agents' edits (esp. Claude/Gemini) as unreviewed diffs: keep good ideas, normalize style/structure, verify correctness

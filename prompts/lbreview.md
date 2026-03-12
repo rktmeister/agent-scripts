@@ -6,9 +6,9 @@ argument-hint:
 Check the diff against main, and review this change carefully.
 
 The diff against main is one of, in this order:
-- git diff --cached
-- git diff
-- git diff main..HEAD or git diff master..HEAD
+- `git dft --cached`
+- `git dft`
+- `git dft main..HEAD` or `git dft master..HEAD`
 
 Careful review means:
 - First, try to understand what the change is about. What its underlying goal really is.

@@ -11,9 +11,9 @@ Args: none.
 Goal: clean up AI-generated slop from the diff against main while preserving the actual feature.
 
 The diff against main is one of, in this order:
-- `git diff --cached`
-- `git diff`
-- `git diff main..HEAD` or `git diff master..HEAD`
+- `git dft --cached`
+- `git dft`
+- `git dft main..HEAD` or `git dft master..HEAD`
 
 AI-generated slop includes:
 - Extra comments that a human wouldn't add or is inconsistent with the rest of the file.

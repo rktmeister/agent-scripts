@@ -42,7 +42,7 @@ Include only high-signal items:
 
 5) Capture **repo state** (if tools are available)
 - `git status -sb`
-- `git diff --stat` (or `git diff --name-only`)
+- `git diff --stat` (or `git diff --name-only`) for file inventory; use `git dft` when you need to inspect content changes
 - Optional: `git log -5 --oneline`
 - Branch/PR/CI references if known
 
