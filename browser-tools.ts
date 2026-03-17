@@ -18,6 +18,8 @@ import readline from 'node:readline/promises';
 import { stdin as input, stdout as output } from 'node:process';
 import { inspect } from 'node:util';
 import puppeteer from 'puppeteer-core';
+import type { Page } from 'puppeteer-core';
+import { extractReadableContentFromHtml } from './lib/browser-content';
 
 /** Utility type so TypeScript knows the async function constructor */
 type AsyncFunctionCtor = new (...args: string[]) => (...fnArgs: unknown[]) => Promise<unknown>;
@@ -861,81 +863,29 @@ interface ChromeSessionDescription extends ChromeProcessInfo {
   tabs: ChromeTabInfo[];
 }
 
-async function ensureReadability(page: any) {
-  try {
-    await page.setBypassCSP?.(true);
-  } catch {
-    // ignore
-  }
-  const scripts = [
-    'https://unpkg.com/@mozilla/readability@0.4.4/Readability.js',
-    'https://unpkg.com/turndown@7.1.2/dist/turndown.js',
-    'https://unpkg.com/turndown-plugin-gfm@1.0.2/dist/turndown-plugin-gfm.js',
-  ];
-  for (const src of scripts) {
-    try {
-      const alreadyLoaded = await page.evaluate((url) => {
-        return Boolean(document.querySelector(`script[src="${url}"]`));
-      }, src);
-      if (!alreadyLoaded) {
-        await page.addScriptTag({ url: src });
-      }
-    } catch {
-      // best-effort; continue
-    }
-  }
+async function extractReadableContent(page: Page): Promise<{ title?: string; content?: string; url: string }> {
+  const [html, fallbackTitle] = await Promise.all([getRenderedHtml(page), page.title().catch(() => undefined)]);
+  return extractReadableContentFromHtml(html, page.url(), fallbackTitle);
 }
 
-async function extractReadableContent(page: any): Promise<{ title?: string; content?: string; url: string }> {
-  await ensureReadability(page);
-  const result = await page.evaluate(() => {
-    const asMarkdown = (html: string | null | undefined) => {
-      if (!html) return '';
-      const TurndownService = (window as any).TurndownService;
-      const turndownPluginGfm = (window as any).turndownPluginGfm;
-      if (!TurndownService) {
-        return '';
-      }
-      const turndown = new TurndownService({ headingStyle: 'atx', codeBlockStyle: 'fenced' });
-      if (turndownPluginGfm?.gfm) {
-        turndown.use(turndownPluginGfm.gfm);
-      }
-      return turndown
-        .turndown(html)
-        .replace(/\n{3,}/g, '\n\n')
-        .trim();
-    };
-
-    const fallbackText = () => {
-      const main =
-        document.querySelector('main, article, [role="main"], .content, #content') || document.body || document.documentElement;
-      return main?.textContent?.trim() ?? '';
-    };
-
-    let title = document.title;
-    let content = '';
-
+async function getRenderedHtml(page: Page): Promise<string> {
+  const client = await page.target().createCDPSession();
+  try {
+    const { root } = await client.send('DOM.getDocument', { depth: -1, pierce: true });
+    const { outerHTML } = await client.send('DOM.getOuterHTML', { nodeId: root.nodeId });
+    if (outerHTML) {
+      return outerHTML;
+    }
+  } catch {
+    // Fall back to Puppeteer's DOM serialization below.
+  } finally {
     try {
-      const Readability = (window as any).Readability;
-      if (Readability) {
-        const clone = document.cloneNode(true) as Document;
-        const article = new Readability(clone).parse();
-        title = article?.title || title;
-        content = asMarkdown(article?.content) || article?.textContent || '';
-      }
+      await client.detach();
     } catch {
-      // ignore readability failures
+      // ignore
     }
-
-    if (!content) {
-      content = fallbackText();
-    }
-
-    content = content?.trim().slice(0, 8000);
-
-    return { title, content, url: location.href };
-  });
-  return result;
+  }
+  return page.content();
 }
 
 function parseNumberListArg(value: string): number[] {

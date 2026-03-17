@@ -12,17 +12,17 @@ Lightweight Chrome DevTools automation without MCP. Uses Chrome's remote debuggi
 ## Commands
 
 ```bash
-browser-tools start [--port 9222]     # Start Chrome with remote debugging
-browser-tools nav <url>               # Navigate to URL
-browser-tools eval '<js>'             # Execute JavaScript in page context
-browser-tools screenshot [file]       # Capture viewport as PNG
-browser-tools pick                    # Interactive element picker
-browser-tools console [--follow]      # Monitor console logs
-browser-tools search <query>          # Google search
-browser-tools content <url>           # Extract page content as markdown
-browser-tools tabs                    # List open tabs
-browser-tools cookies                 # Dump cookies as JSON
-browser-tools kill                    # Kill Chrome processes
+browser-tools start [--port 9222] [--profile] [--profile-source <path>] [--profile-dir <path>] [--profile-directory <name>]
+browser-tools nav <url>                               # Navigate to URL
+browser-tools eval [--pretty-print] '<js>'            # Execute JavaScript in page context
+browser-tools screenshot                              # Capture viewport as PNG to a temp file
+browser-tools pick <message...>                       # Interactive element picker
+browser-tools console [--follow] [--types <list>]    # Monitor console logs
+browser-tools search [--content] <query...>          # Google search
+browser-tools content <url>                          # Extract page content as markdown-like text
+browser-tools cookies                                # Dump cookies as JSON
+browser-tools inspect [--json]                       # List DevTools Chrome sessions and tabs
+browser-tools kill (--all | --ports <list> | --pids <list>) [--force]
 ```
 
 ## Typical Workflow
@@ -52,5 +52,8 @@ browser-tools kill                    # Kill Chrome processes
 - Do not launch multiple Chrome processes against the same profile dir at the same time
 - `--profile` copies an existing browser user-data dir into the target `--profile-dir` before launch; use `--profile-source` when auto-detection is wrong or when you want a specific source
 - Avoid pointing `--profile-dir` at your live browser config directly; prefer copying it into a dedicated automation dir and reusing that copy
-- Screenshots are saved to temp directory, path is printed to stdout
+- `inspect` replaces any need for a separate `tabs` command; use it to list matching browser sessions and their open tabs
+- `kill` requires `--all`, `--ports <list>`, or `--pids <list>` to select targets; add `--force` to skip the confirmation prompt
+- `search --content` fetches readable content for each result; use `content <url>` when you want extraction for one page directly
+- Screenshots are always saved to the temp directory, and the path is printed to stdout
 - Use `--follow` with console to continuously monitor logs
