@@ -1,0 +1,4 @@
+interface:
+  display_name: "ServiceNow Fluent App"
+  short_description: "Build and deploy ServiceNow app artifacts with Fluent"
+  default_prompt: "Use $servicenow-fluent-app to design, implement, or revise ServiceNow Fluent app artifacts for the current project."

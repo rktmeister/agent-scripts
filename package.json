@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "mkdir -p bin && for f in *.ts; do bun build \"$f\" --compile --outfile \"bin/${f%.ts}\"; done && cp scripts/committer bin/committer && cp scripts/gwt bin/gwt",
+    "build": "mkdir -p bin && for f in *.ts; do bun build \"$f\" --compile --outfile \"bin/${f%.ts}\"; done && cp scripts/committer bin/committer && cp scripts/gwt bin/gwt && cp scripts/slop-check bin/slop-check",
     "build:tool": "mkdir -p bin && bun build \"$TOOL.ts\" --compile --outfile \"bin/$TOOL\"",
     "install-bin": "cp bin/* ~/.local/bin/"
   },

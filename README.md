@@ -97,6 +97,21 @@ trash path/to/file path/to/dir
 trash --allow-missing path/that/might/not/exist
 ```
 
+## slop-check
+
+Wrapper for the `slop-guard` prose linter that avoids the system `sg` name collision.
+
+```bash
+slop-check README.md
+slop-check -t 60 docs/*.md
+slop-check -j draft.md | jq
+```
+
+Behavior:
+- uses `~/.local/bin/sg` if you installed `slop-guard` persistently with `uv tool install slop-guard`
+- otherwise falls back to `uvx --from slop-guard sg ...`
+- requires `uv`/`uvx`
+
 ## browser-tools
 
 Chrome DevTools automation via CLI.

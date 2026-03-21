@@ -23,6 +23,8 @@ AI-generated slop includes:
 - Any other style that is inconsistent with the file, including using types when the file doesn't.
 - Consistency of the changes with `AGENTS.md` requirements.
 
+If `slop-check` is available, use it on changed prose-first docs or user-facing copy to ground the cleanup. Do not apply it blindly to instruction-heavy files such as `AGENTS.md`, prompts, or skills.
+
 Guardrails:
 - Do not remove the actual feature.
 - Do not `git add` your changes.

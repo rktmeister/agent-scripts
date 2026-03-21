@@ -75,9 +75,10 @@ When identified: explain concisely, provide 1-2 refactoring directions with pros
 
 ## Execution Discipline
 
-- Verify facts from files, diffs, logs, or commands before asserting behavior/state.
+- Never guess at files, environment state, config values, or behavior; verify via files, diffs, logs, or commands before asserting.
 - Before editing, state the exact files/modules in scope.
 - Preserve semantics by default for ports/refactors; call out intentional behavior changes.
+- After fixing a bug pattern, search for nearby or similar occurrences (prefer `rg`) and address them in-scope when appropriate.
 - If asked for full diff/log output, do not truncate.
 - Provide copy/paste-ready commands (include `cd`, env vars, and flags) when giving runnable steps.
 
@@ -124,6 +125,7 @@ If a lookup, search, or tool call returns empty or suspiciously narrow results:
 - Read `README*` and relevant docs before scanning code; follow `read_when` hints and linked docs until the domain is clear.
 - When behavior/API changes, update docs in the same patch; do not ship behavior changes without docs when docs exist.
 - When editing docs under `docs/`, include YAML front matter with `summary` + `read_when`, and keep `docs-list` output clean.
+- For prose-first docs and user-facing copy, run `slop-check` if it is available and fix obvious slop before finalizing. Do not apply it blindly to instruction-heavy files such as `AGENTS.md`, prompts, or skills.
 
 ---
 
@@ -181,17 +183,17 @@ Examples: `rm -rf`, `git reset --hard`, `git clean`, `git push --force`, databas
 ## Git Conventions
 
 - Use Conventional Commits: `feat` / `fix` / `refactor` / `build` / `ci` / `chore` / `docs` / `style` / `perf` / `test` / `revert`
-- Custom scopes allowed (e.g., `macos`, `docker`)
 - Commit message writing:
   - Subject: `<type>(<scope>): <summary>` (imperative, no trailing period, keep it short; use `!` for breaking changes)
   - Body (recommended for non-trivial changes): 1-3 short paragraphs explaining intent/behavior change and any non-obvious details. Prefer concise prose over rigid templates.
   - If you ran commands/tests, add a final line like: `Ran: <cmd>`
-  - Optional trailers: `Refs: #123`, `Closes: #123`, etc.
-- Optional Pi session trailer (disabled by default): enable per-repo with `git config pi.git.commit.piSession.enabled true`. When enabled and `PI_SESSION_ID` is available (interactive Pi), `committer` appends: `Pi-Session: <uuid>`
 - Prefer the commit helper `committer` (on `PATH` via `~/agent-scripts/bin`): stage exactly the paths you list; never stage/commit the entire repo by default
 - Note: `committer` operates on the shared index; it will unstage any existing staged changes (`git restore --staged :/`) before staging/committing the paths you specify
-- For any content diff inspection, prefer difftastic-backed Git commands: `git dft`, `git dshow`, and `git dlog`; reserve plain `git diff` for inventory or special views such as `--stat`, `--name-only`, `--check`, `--diff-filter=U`, and `--cc`
-- Sanity-check "real" changes vs the last commit with `git dft HEAD -- <path>` (or `git dft HEAD`) and check what your shared index thinks is staged with `git dft --cached HEAD`; use plain `git diff --stat` or `git diff --name-only` when you only need file inventory
+- Never commit or push unless explicitly asked.
+- For semantic code review and refactors, prefer difftastic-backed Git commands: `git dft`, `git dshow`, and `git dlog`
+- In environments where `git diff` is configured to use an external diff tool, use `git --no-ext-diff diff -- <path>` when you need the literal line-by-line patch instead of the external diff view
+- Reserve plain `git diff` for inventory or special views such as `--stat`, `--name-only`, `--check`, `--diff-filter=U`, and `--cc`
+- Sanity-check "real" changes vs the last commit with `git dft HEAD -- <path>` (or `git dft HEAD`) and check what your shared index thinks is staged with `git dft --cached HEAD`; use `git diff --stat` or `git diff --name-only` when you only need file inventory, and `git --no-ext-diff diff -- <path>` when you need the raw patch text
 - When resolving merge or rebase conflicts, list unmerged paths with `git diff --name-only --diff-filter=U`, then inspect each conflicted file with `git dft --ours -- <path>`, `git dft --theirs -- <path>`, and `git dft --base -- <path>`; fall back to `git diff --cc -- <path>` only when you specifically need the combined patch view
 - Avoid manual `git add -A`, `git add .`, `git commit`, or interactive staging unless explicitly requested (or required by the repo's workflow)
 - Multi-agent safety (same worktree): treat the Git index (staging area) as shared state; prefer `committer` and avoid relying on staged changes persisting
@@ -223,6 +225,7 @@ When multiple agents share one worktree (Codex + Claude + Gemini, etc.):
 | `browser-tools` | Chrome DevTools automation helper (available via `~/agent-scripts/bin`) |
 | `committer` | Commit helper (available via `~/agent-scripts/bin`) |
 | `gwt` | Create/ensure dedicated per-branch git worktrees under `.worktrees/` |
+| `slop-check` | Run slop-guard without the system `sg` name collision |
 | `trash` | Safe deletions (available via `~/agent-scripts/bin`) |
 | `docs-list` | List + sanity-check `docs/**/*.md` summaries (available via `~/agent-scripts/bin`) |
 
@@ -298,7 +301,6 @@ Only confirm before:
 # Project Context
 
 - Single source of truth: edit `~/agent-scripts/AGENTS.md`, `~/agent-scripts/prompts/`, and `~/agent-scripts/skills/` (harness dirs like `~/.codex/*`, `~/.pi/agent/*`, `~/.claude/*` should be symlinks into `~/agent-scripts`).
-- Check for `REPO_GUIDE.md` to understand repo structure before scanning files manually
 - Do not read `.env` files unless explicitly granted permission
 - Do not commit internal-only hostnames, IPs, or runbooks to tracked files
 - Keep files under ~500 lines; mention refactor paths for larger files

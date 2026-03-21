@@ -1,0 +1,4 @@
+interface:
+  display_name: "ServiceNow ATF"
+  short_description: "Author, debug, and run ServiceNow ATF tests"
+  default_prompt: "Use $servicenow-atf to design, debug, or implement Automated Test Framework tests for this ServiceNow app."
